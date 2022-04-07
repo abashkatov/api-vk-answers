@@ -80,7 +80,7 @@ class QuestionController extends AbstractController
      * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      * @throws \JsonException
      */
-    #[Route('/group/{groupId<\d+>}/questions/{question<\d+>}', name: 'app_group_questions_get', methods: ['PATCH'])]
+    #[Route('/group/{groupId<\d+>}/questions/{question<\d+>}', name: 'app_group_questions_patch', methods: ['PATCH'])]
     public function patchByGroup(Question $question, int $groupId, Request $request): Response
     {
         $this->logger->debug(__METHOD__);
