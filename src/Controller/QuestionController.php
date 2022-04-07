@@ -9,32 +9,38 @@ use App\Repository\QuestionRepository;
 use App\Repository\TagRepository;
 use App\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Serializer\Encoder\JsonEncoder;
+use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\Serializer;
 use Symfony\Component\Serializer\SerializerInterface;
 
 class QuestionController extends AbstractController
 {
-    private QuestionRepository $questionRepository;
-    private Serializer         $serializer;
-    private UserRepository     $userRepository;
-    private TagRepository      $tagRepository;
+    private QuestionRepository     $questionRepository;
+    private Serializer             $serializer;
+    private UserRepository         $userRepository;
+    private TagRepository          $tagRepository;
+    private EntityManagerInterface $em;
 
     public function __construct(
         QuestionRepository $questionRepository,
         SerializerInterface $serializer,
         UserRepository $userRepository,
-        TagRepository $tagRepository
+        TagRepository $tagRepository,
+        EntityManagerInterface $em
     )
     {
         $this->questionRepository = $questionRepository;
         $this->serializer         = $serializer;
         $this->userRepository = $userRepository;
         $this->tagRepository = $tagRepository;
+        $this->em = $em;
     }
 
     #[Route('/group/{groupId<\d+>}/questions/{question<\d+>}', name: 'app_group_questions_get', methods: ['GET'])]
@@ -53,6 +59,41 @@ class QuestionController extends AbstractController
         if ($question->getGroupId() !== null) {
             throw new NotFoundHttpException();
         }
+        $data = $this->serializer->normalize($question);
+        return $this->json($data);
+    }
+
+    /**
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
+     * @throws \JsonException
+     */
+    #[Route('/group/{groupId<\d+>}/questions/{question<\d+>}', name: 'app_group_questions_get', methods: ['PATCH'])]
+    public function patchByGroup(Question $question, int $groupId, Request $request): Response
+    {
+        if ($question->getGroupId() !== $groupId) {
+            throw new NotFoundHttpException();
+        }
+        $content = $request->getContent();
+        $this->serializer->deserialize($content, Question::class, JsonEncoder::FORMAT, [AbstractNormalizer::OBJECT_TO_POPULATE => $question]);
+        $this->em->flush();
+        $data = $this->serializer->normalize($question);
+        return $this->json($data);
+    }
+
+    /**
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
+     * @throws \JsonException
+     */
+    #[Route('/questions/{question<\d+>}', name: 'app_questions_get', methods: ['PATCH'])]
+    public function patchQuestion(Question $question, Request $request): Response
+    {
+        if ($question->getGroupId() !== null) {
+            throw new NotFoundHttpException();
+        }
+        /** @var Question $question */
+        $content = $request->getContent();
+        $this->serializer->deserialize($content, Question::class, JsonEncoder::FORMAT, [AbstractNormalizer::OBJECT_TO_POPULATE => $question]);
+        $this->em->flush();
         $data = $this->serializer->normalize($question);
         return $this->json($data);
     }
