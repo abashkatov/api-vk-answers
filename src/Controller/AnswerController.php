@@ -47,6 +47,7 @@ class AnswerController extends AbstractController
     #[Route('/questions/{question<\d+>}/answers', name: 'app_questions_answers_list', methods: ['GET'])]
     public function list(Request $request): Response
     {
+        $this->logger->debug(__METHOD__);
         $page  = (int)$request->query->get('page', 1);
         $limit = (int)$request->query->get('limit', 20);
         if ($page < 1 || $limit < 1) {
@@ -64,6 +65,7 @@ class AnswerController extends AbstractController
     #[Route('/answers/my', name: 'app_answers_my', methods: ['GET'])]
     public function listMy(Request $request): Response
     {
+        $this->logger->debug(__METHOD__);
         $userVkId     = (int)$request->headers->get('X-VK-ID');
         $page         = (int)$request->query->get('page', 1);
         $limit        = (int)$request->query->get('limit', 20);
@@ -80,6 +82,7 @@ class AnswerController extends AbstractController
     #[Route('/questions/{question<\d+>}/answers/{answer<\d+>}/best', name: 'app_questions_answers_set_best', methods: ['POST'])]
     public function setBestAnswer(Question $question, Answer $answer, Request $request): Response
     {
+        $this->logger->debug(__METHOD__);
         $userVkId = (int)$request->headers->get('X-VK-ID');
         if (
             $question->getAuthor() === null || $answer->getQuestion() === null ||
@@ -106,6 +109,7 @@ class AnswerController extends AbstractController
     #[Route('/questions/{question<\d+>}/answers/{answer<\d+>}', name: 'app_questions_answer_patch', methods: ['PATCH'])]
     public function patch(Question $question, Answer $answer, Request $request): Response
     {
+        $this->logger->debug(__METHOD__);
         if ($answer->getQuestion() === null || $answer->getQuestion()->getId() !== $question->getId()) {
             throw new NotFoundHttpException();
         }

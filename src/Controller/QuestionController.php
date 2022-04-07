@@ -10,6 +10,7 @@ use App\Repository\TagRepository;
 use App\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -27,19 +28,22 @@ class QuestionController extends AbstractController
     private UserRepository         $userRepository;
     private TagRepository          $tagRepository;
     private EntityManagerInterface $em;
+    private LoggerInterface        $logger;
 
     public function __construct(
         QuestionRepository $questionRepository,
         SerializerInterface $serializer,
         UserRepository $userRepository,
         TagRepository $tagRepository,
-        EntityManagerInterface $em
+        EntityManagerInterface $em,
+        LoggerInterface $logger,
     ) {
         $this->questionRepository = $questionRepository;
         $this->serializer         = $serializer;
         $this->userRepository     = $userRepository;
         $this->tagRepository      = $tagRepository;
         $this->em                 = $em;
+        $this->logger = $logger;
     }
 
     /**
@@ -48,6 +52,7 @@ class QuestionController extends AbstractController
     #[Route('/group/{groupId<\d+>}/questions/{question<\d+>}', name: 'app_group_questions_get', methods: ['GET'])]
     public function getByGroup(Question $question, int $groupId): Response
     {
+        $this->logger->debug(__METHOD__);
         if ($question->getGroupId() !== $groupId) {
             throw new NotFoundHttpException();
         }
@@ -62,6 +67,7 @@ class QuestionController extends AbstractController
     #[Route('/questions/{question<\d+>}', name: 'app_questions_get', methods: ['GET'])]
     public function getQuestion(Question $question): Response
     {
+        $this->logger->debug(__METHOD__);
         if ($question->getGroupId() !== null) {
             throw new NotFoundHttpException();
         }
@@ -77,6 +83,7 @@ class QuestionController extends AbstractController
     #[Route('/group/{groupId<\d+>}/questions/{question<\d+>}', name: 'app_group_questions_get', methods: ['PATCH'])]
     public function patchByGroup(Question $question, int $groupId, Request $request): Response
     {
+        $this->logger->debug(__METHOD__);
         if ($question->getGroupId() !== $groupId) {
             throw new NotFoundHttpException();
         }
@@ -103,6 +110,7 @@ class QuestionController extends AbstractController
     #[Route('/questions/{question<\d+>}', name: 'app_questions_patch', methods: ['PATCH'])]
     public function patchQuestion(Question $question, Request $request): Response
     {
+        $this->logger->debug(__METHOD__);
         if ($question->getGroupId() !== null) {
             throw new NotFoundHttpException();
         }
@@ -128,6 +136,7 @@ class QuestionController extends AbstractController
     #[Route('/group/{groupId<\d+>}/questions', name: 'app_group_questions_list', methods: ['GET'])]
     public function listByGroup(int $groupId, Request $request): Response
     {
+        $this->logger->debug(__METHOD__);
         $page         = (int)$request->query->get('page', 1);
         $limit        = (int)$request->query->get('limit', 20);
         $searchString = $request->query->get('search', '');
@@ -143,6 +152,7 @@ class QuestionController extends AbstractController
     #[Route('/questions', name: 'app_questions_list', methods: ['GET'])]
     public function list(Request $request): Response
     {
+        $this->logger->debug(__METHOD__);
         $page         = (int)$request->query->get('page', 1);
         $limit        = (int)$request->query->get('limit', 20);
         $searchString = $request->query->get('search', '');
@@ -158,6 +168,7 @@ class QuestionController extends AbstractController
     #[Route('/questions/my', name: 'app_questions_my_list', methods: ['GET'])]
     public function listMy(Request $request): Response
     {
+        $this->logger->debug(__METHOD__);
         $userVkId     = (int)$request->headers->get('X-VK-ID');
         $page         = (int)$request->query->get('page', 1);
         $limit        = (int)$request->query->get('limit', 20);
@@ -177,6 +188,7 @@ class QuestionController extends AbstractController
     #[Route('/questions', name: 'app_questions_post', methods: ['POST'])]
     public function post(Request $request): Response
     {
+        $this->logger->debug(__METHOD__);
         $data = json_decode($request->getContent(), true, 512, JSON_THROW_ON_ERROR);
         /** @var Question $question */
         $question = $this->serializer->denormalize($data, Question::class);
