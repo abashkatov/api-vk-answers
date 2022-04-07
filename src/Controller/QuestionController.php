@@ -34,13 +34,12 @@ class QuestionController extends AbstractController
         UserRepository $userRepository,
         TagRepository $tagRepository,
         EntityManagerInterface $em
-    )
-    {
+    ) {
         $this->questionRepository = $questionRepository;
         $this->serializer         = $serializer;
-        $this->userRepository = $userRepository;
-        $this->tagRepository = $tagRepository;
-        $this->em = $em;
+        $this->userRepository     = $userRepository;
+        $this->tagRepository      = $tagRepository;
+        $this->em                 = $em;
     }
 
     /**
@@ -53,6 +52,7 @@ class QuestionController extends AbstractController
             throw new NotFoundHttpException();
         }
         $data = $this->serializer->normalize($question);
+
         return $this->json($data);
     }
 
@@ -66,6 +66,7 @@ class QuestionController extends AbstractController
             throw new NotFoundHttpException();
         }
         $data = $this->serializer->normalize($question);
+
         return $this->json($data);
     }
 
@@ -79,13 +80,19 @@ class QuestionController extends AbstractController
         if ($question->getGroupId() !== $groupId) {
             throw new NotFoundHttpException();
         }
-        $votes = $question->getVoteCount();
+        $votes   = $question->getVoteCount();
         $content = $request->getContent();
-        $this->serializer->deserialize($content, Question::class, JsonEncoder::FORMAT, [AbstractNormalizer::OBJECT_TO_POPULATE => $question]);
+        $this->serializer->deserialize(
+            $content,
+            Question::class,
+            JsonEncoder::FORMAT,
+            [AbstractNormalizer::OBJECT_TO_POPULATE => $question]
+        );
         $question->setVoteCount($votes);
         $question->setUpdatedAt(new \DateTime());
         $this->em->flush();
         $data = $this->serializer->normalize($question);
+
         return $this->json($data);
     }
 
@@ -99,35 +106,65 @@ class QuestionController extends AbstractController
         if ($question->getGroupId() !== null) {
             throw new NotFoundHttpException();
         }
-        $votes = $question->getVoteCount();
+        $votes   = $question->getVoteCount();
         $content = $request->getContent();
-        $this->serializer->deserialize($content, Question::class, JsonEncoder::FORMAT, [AbstractNormalizer::OBJECT_TO_POPULATE => $question]);
+        $this->serializer->deserialize(
+            $content,
+            Question::class,
+            JsonEncoder::FORMAT,
+            [AbstractNormalizer::OBJECT_TO_POPULATE => $question]
+        );
         $question->setVoteCount($votes);
         $question->setUpdatedAt(new \DateTime());
         $this->em->flush();
         $data = $this->serializer->normalize($question);
+
         return $this->json($data);
     }
 
+    /**
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
+     */
     #[Route('/group/{groupId<\d+>}/questions', name: 'app_group_questions_list', methods: ['GET'])]
     public function listByGroup(int $groupId, Request $request): Response
     {
-        $page  = (int)$request->query->get('page', 1);
-        $limit = (int)$request->query->get('limit', 20);
+        $page         = (int)$request->query->get('page', 1);
+        $limit        = (int)$request->query->get('limit', 20);
         $searchString = $request->query->get('search', '');
-        $questions = $this->questionRepository->findByNameAndGroup($searchString, $groupId, $page, $limit);
-        $data = $this->serializer->normalize($questions);
+        $questions    = $this->questionRepository->findByNameAndGroup($searchString, $groupId, $page, $limit);
+        $data         = $this->serializer->normalize($questions);
+
         return $this->json($data);
     }
 
+    /**
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
+     */
     #[Route('/questions', name: 'app_questions_list', methods: ['GET'])]
     public function list(Request $request): Response
     {
-        $page  = (int)$request->query->get('page', 1);
-        $limit = (int)$request->query->get('limit', 20);
+        $page         = (int)$request->query->get('page', 1);
+        $limit        = (int)$request->query->get('limit', 20);
         $searchString = $request->query->get('search', '');
-        $questions = $this->questionRepository->findByNameAndGroup($searchString, null, $page, $limit);
-        $data = $this->serializer->normalize($questions);
+        $questions    = $this->questionRepository->findByNameAndGroup($searchString, null, $page, $limit);
+        $data         = $this->serializer->normalize($questions);
+
+        return $this->json($data);
+    }
+
+    /**
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
+     */
+    #[Route('/questions/my', name: 'app_questions_my_list', methods: ['GET'])]
+    public function listMy(Request $request): Response
+    {
+        $userVkId     = $request->headers->get('X-VK-ID');
+        $page         = (int)$request->query->get('page', 1);
+        $limit        = (int)$request->query->get('limit', 20);
+        $searchString = $request->query->get('search', '');
+        $questions    = $this->questionRepository->findByNameAndUserVkId($searchString, $userVkId, $page, $limit);
+        $data         = $this->serializer->normalize($questions);
+
         return $this->json($data);
     }
 
@@ -143,11 +180,11 @@ class QuestionController extends AbstractController
         $data = json_decode($request->getContent(), true, 512, JSON_THROW_ON_ERROR);
         /** @var Question $question */
         $question = $this->serializer->denormalize($data, Question::class);
-        $author = $this->userRepository->findOneBy(['vkId' => $question->getAuthor()?->getVkId()]);
+        $author   = $this->userRepository->findOneBy(['vkId' => $question->getAuthor()?->getVkId()]);
         if ($author instanceof User) {
             $question->setAuthor($author);
         }
-        $tagNames = $question->getTags()->map(static fn(Tag $tag) => $tag->getTagName())->toArray();
+        $tagNames     = $question->getTags()->map(static fn(Tag $tag) => $tag->getTagName())->toArray();
         $existingTags = [];
         foreach ($this->tagRepository->findAllByTagNames($tagNames) as $tag) {
             $existingTags[$tag->getTagName()] = $tag;

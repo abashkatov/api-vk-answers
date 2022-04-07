@@ -7,6 +7,8 @@ use App\Entity\Tag;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\OptimisticLockException;
 use Doctrine\ORM\ORMException;
+use Doctrine\ORM\Query\Expr;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -49,12 +51,9 @@ class QuestionRepository extends ServiceEntityRepository
     /**
      * @return Question[] Returns an array of Tag objects
      */
-    public function findByNameAndGroup(string $likeName, ?int $groupId = null, int $page = 1, $limit = 20): array
+    public function findByNameAndGroup(string $searchString, ?int $groupId = null, int $page = 1, $limit = 20): array
     {
-        $page = max(1, $page);
-        $limit = max(1, $limit);
-        $offset = ($page - 1) * $limit;
-        $qb = $this->createQueryBuilder('q');
+        $qb = $this->createQueryBuilderBySearchAndPage($searchString, $page, $limit);
         if (\is_null($groupId)) {
             $qb = $qb->andWhere('q.groupId is null');
         } else {
@@ -62,14 +61,39 @@ class QuestionRepository extends ServiceEntityRepository
                 ->andWhere('q.groupId = :groupId')
                 ->setParameter('groupId', $groupId);
         }
-        if (!empty($likeName)) {
+
+        return $qb
+            ->getQuery()
+            ->getResult();
+    }
+
+    private function createQueryBuilderBySearchAndPage(string $searchString, int $page, int $limit): QueryBuilder
+    {
+        $page   = max(1, $page);
+        $limit  = max(1, $limit);
+        $offset = ($page - 1) * $limit;
+        $qb     = $this->createQueryBuilder('q');
+        if (!empty($searchString)) {
             $qb = $qb
                 ->andWhere($qb->expr()->like('q.title', ':likeName'))
-                ->setParameter('likeName', '%' . $likeName . '%');
+                ->setParameter('likeName', '%' . $searchString . '%');
         }
+
         return $qb
             ->setFirstResult($offset)
-            ->setMaxResults($limit)
+            ->setMaxResults($limit);
+    }
+
+    /**
+     * @return Question[] Returns an array of Tag objects
+     */
+    public function findByNameAndUserVkId(string $searchString, int $userVkId, int $page, int $limit): array
+    {
+        return $this
+            ->createQueryBuilderBySearchAndPage($searchString, $page, $limit)
+            ->join('q.author', 'a')
+            ->andWhere('a.vkId = :vkId')
+            ->setParameter('vkId', $userVkId)
             ->getQuery()
             ->getResult();
     }
