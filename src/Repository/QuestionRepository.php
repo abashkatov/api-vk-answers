@@ -108,6 +108,9 @@ class QuestionRepository extends ServiceEntityRepository
         return $qb
             ->select('q.groupId')
             ->andWhere('q.groupId is not null')
+            ->join('q.author', 'u')
+            ->andWhere('u.vkId = :vkId')
+            ->setParameter('vkId', $userVkId)
             ->distinct()
             ->getQuery()
             ->getArrayResult();
