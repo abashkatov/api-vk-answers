@@ -8,7 +8,7 @@ use App\Entity\User;
 use App\Repository\AnswerRepository;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
-use http\Exception\InvalidArgumentException;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -25,17 +25,20 @@ class AnswerController extends AbstractController
     private UserRepository         $userRepository;
     private AnswerRepository       $answerRepository;
     private EntityManagerInterface $em;
+    private LoggerInterface        $logger;
 
     public function __construct(
         SerializerInterface $serializer,
         UserRepository $userRepository,
         AnswerRepository $answerRepository,
         EntityManagerInterface $em,
+        LoggerInterface $logger,
     ) {
         $this->serializer       = $serializer;
         $this->userRepository   = $userRepository;
         $this->answerRepository = $answerRepository;
         $this->em               = $em;
+        $this->logger = $logger;
     }
 
     /**
@@ -47,7 +50,7 @@ class AnswerController extends AbstractController
         $page  = (int)$request->query->get('page', 1);
         $limit = (int)$request->query->get('limit', 20);
         if ($page < 1 || $limit < 1) {
-            throw new InvalidArgumentException();
+            throw new \InvalidArgumentException();
         }
         $answers = $this->answerRepository->findBy([], null, $limit, ($page - 1) * $limit);
         $data    = $this->serializer->normalize($answers);
@@ -127,9 +130,12 @@ class AnswerController extends AbstractController
     #[Route('/questions/{question<\d+>}/answers', name: 'app_questions_answer_post', methods: ['POST'])]
     public function post(Question $question, Request $request): Response
     {
+        $this->logger->debug('start', $this->serializer->normalize($question));
         /** @var Answer $answer */
         $answer = $this->serializer->deserialize($request->getContent(), Answer::class, JsonEncoder::FORMAT);
+        $this->logger->debug('answer', $this->serializer->normalize($answer));
         $author = $this->userRepository->findOneBy(['vkId' => $answer->getAuthor()?->getVkId()]);
+        $this->logger->debug('author', $this->serializer->normalize($author));
         if ($author instanceof User) {
             $answer->setAuthor($author);
         }
