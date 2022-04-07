@@ -3,15 +3,19 @@
 namespace App\Controller;
 
 use App\Entity\Question;
+use App\Entity\QuestionVote;
 use App\Entity\Tag;
 use App\Entity\User;
 use App\Repository\QuestionRepository;
+use App\Repository\QuestionVoteRepository;
 use App\Repository\TagRepository;
 use App\Repository\UserRepository;
+use App\Service\QuestionVoteService;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -29,6 +33,8 @@ class QuestionController extends AbstractController
     private TagRepository          $tagRepository;
     private EntityManagerInterface $em;
     private LoggerInterface        $logger;
+    private QuestionVoteRepository $questionVoteRepository;
+    private QuestionVoteService    $questionVoteService;
 
     public function __construct(
         QuestionRepository $questionRepository,
@@ -37,13 +43,17 @@ class QuestionController extends AbstractController
         TagRepository $tagRepository,
         EntityManagerInterface $em,
         LoggerInterface $logger,
+        QuestionVoteRepository $questionVoteRepository,
+        QuestionVoteService $questionVoteService,
     ) {
-        $this->questionRepository = $questionRepository;
-        $this->serializer         = $serializer;
-        $this->userRepository     = $userRepository;
-        $this->tagRepository      = $tagRepository;
-        $this->em                 = $em;
-        $this->logger             = $logger;
+        $this->questionRepository     = $questionRepository;
+        $this->serializer             = $serializer;
+        $this->userRepository         = $userRepository;
+        $this->tagRepository          = $tagRepository;
+        $this->em                     = $em;
+        $this->logger                 = $logger;
+        $this->questionVoteRepository = $questionVoteRepository;
+        $this->questionVoteService    = $questionVoteService;
     }
 
     /**
@@ -189,7 +199,13 @@ class QuestionController extends AbstractController
         $page         = (int)$request->query->get('page', 1);
         $limit        = (int)$request->query->get('limit', 20);
         $searchString = $request->query->get('search', '');
-        $questions    = $this->questionRepository->findByNameAndUserVkIdAndGroupId($searchString, $userVkId, $groupId, $page, $limit);
+        $questions    = $this->questionRepository->findByNameAndUserVkIdAndGroupId(
+            $searchString,
+            $userVkId,
+            $groupId,
+            $page,
+            $limit
+        );
         $data         = $this->serializer->normalize($questions);
 
         return $this->json($data);
@@ -228,5 +244,93 @@ class QuestionController extends AbstractController
         $this->questionRepository->add($question);
 
         return $this->json($question);
+    }
+
+    /**
+     * @throws \Doctrine\ORM\OptimisticLockException
+     * @throws \Doctrine\ORM\ORMException
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
+     */
+    #[Route('/group/{groupId<\d+>}/questions/{question<\d+>}/voteUp', name: 'app_group_questions_vote_up', methods: ['PUT'])]
+    public function voteGroupUp(Request $request, int $groupId, Question $question): Response
+    {
+        if ($question->getGroupId() !== $groupId) {
+            throw new NotFoundHttpException();
+        }
+        $userVkId = (int)$request->headers->get('X-VK-ID');
+        $this->questionVoteService->vote($userVkId, $question, 1);
+        $this->em->flush();
+        $totalVote = $this->questionVoteRepository->sum($userVkId, $question);
+        $question->setVoteCount($totalVote);
+        $this->em->flush();
+        $data = $this->serializer->normalize($question);
+
+        return $this->json($data);
+    }
+
+    /**
+     * @throws \Doctrine\ORM\OptimisticLockException
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
+     * @throws \Doctrine\ORM\ORMException
+     */
+    #[Route('/group/{groupId<\d+>}/questions/{question<\d+>}/voteDown', name: 'app_group_questions_vote_down', methods: ['PUT'])]
+    public function voteGroupDown(Request $request, int $groupId, Question $question): Response
+    {
+        if ($question->getGroupId() !== $groupId) {
+            throw new NotFoundHttpException();
+        }
+        $userVkId = (int)$request->headers->get('X-VK-ID');
+        $this->questionVoteService->vote($userVkId, $question, -1);
+        $this->em->flush();
+        $totalVote = $this->questionVoteRepository->sum($userVkId, $question);
+        $question->setVoteCount($totalVote);
+        $this->em->flush();
+        $data = $this->serializer->normalize($question);
+
+        return $this->json($data);
+    }
+
+    /**
+     * @throws \Doctrine\ORM\OptimisticLockException
+     * @throws \Doctrine\ORM\ORMException
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
+     */
+    #[Route('/questions/{question<\d+>}/voteUp', name: 'app_questions_vote_up', methods: ['PUT'])]
+    public function voteUp(Request $request, Question $question): Response
+    {
+        if ($question->getGroupId() !== null) {
+            throw new NotFoundHttpException();
+        }
+        $userVkId = (int)$request->headers->get('X-VK-ID');
+        $this->questionVoteService->vote($userVkId, $question, 1);
+        $this->em->flush();
+        $totalVote = $this->questionVoteRepository->sum($userVkId, $question);
+        $question->setVoteCount($totalVote);
+        $this->em->flush();
+        $data = $this->serializer->normalize($question);
+
+        return $this->json($data);
+    }
+
+    /**
+     * @throws \Doctrine\ORM\OptimisticLockException
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
+     * @throws \Doctrine\ORM\ORMException
+     */
+    #[Route('/questions/{question<\d+>}/voteDown', name: 'app_questions_vote_down', methods: ['PUT'])]
+    public function voteDown(Request $request, Question $question): Response
+    {
+        if ($question->getGroupId() !== null) {
+            throw new NotFoundHttpException();
+        }
+        $userVkId = (int)$request->headers->get('X-VK-ID');
+        $this->questionVoteService->vote($userVkId, $question, -1);
+        $this->em->flush();
+        $totalVote = $this->questionVoteRepository->sum($userVkId, $question);
+        $question->setVoteCount($totalVote);
+        $this->em->flush();
+        $data = $this->serializer->normalize($question);
+
+        return $this->json($data);
     }
 }
