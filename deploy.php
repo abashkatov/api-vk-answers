@@ -29,7 +29,7 @@ host('prod')
     
 // Tasks
 
-task('database:migrate')->disable();
+//task('database:migrate')->disable();
 
 task('build', function () {
     run('cd {{release_path}} && build');
