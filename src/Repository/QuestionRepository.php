@@ -98,6 +98,21 @@ class QuestionRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    /**
+     * @return int[]
+     */
+    public function findCommunities(int $userVkId): array
+    {
+        $qb = $this->createQueryBuilder('q');
+
+        return $qb
+            ->select('q.groupId')
+            ->andWhere('q.groupId is not null')
+            ->distinct()
+            ->getQuery()
+            ->getArrayResult();
+    }
+
     // /**
     //  * @return Question[] Returns an array of Question objects
     //  */
