@@ -73,8 +73,11 @@ class QuestionController extends AbstractController
         if ($question->getGroupId() !== $groupId) {
             throw new NotFoundHttpException();
         }
+        $votes = $question->getVoteCount();
         $content = $request->getContent();
         $this->serializer->deserialize($content, Question::class, JsonEncoder::FORMAT, [AbstractNormalizer::OBJECT_TO_POPULATE => $question]);
+        $question->setVoteCount($votes);
+        $question->setUpdatedAt(new \DateTime());
         $this->em->flush();
         $data = $this->serializer->normalize($question);
         return $this->json($data);
@@ -90,9 +93,11 @@ class QuestionController extends AbstractController
         if ($question->getGroupId() !== null) {
             throw new NotFoundHttpException();
         }
-        /** @var Question $question */
+        $votes = $question->getVoteCount();
         $content = $request->getContent();
         $this->serializer->deserialize($content, Question::class, JsonEncoder::FORMAT, [AbstractNormalizer::OBJECT_TO_POPULATE => $question]);
+        $question->setVoteCount($votes);
+        $question->setUpdatedAt(new \DateTime());
         $this->em->flush();
         $data = $this->serializer->normalize($question);
         return $this->json($data);
