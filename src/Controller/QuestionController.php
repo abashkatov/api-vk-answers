@@ -43,6 +43,9 @@ class QuestionController extends AbstractController
         $this->em = $em;
     }
 
+    /**
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
+     */
     #[Route('/group/{groupId<\d+>}/questions/{question<\d+>}', name: 'app_group_questions_get', methods: ['GET'])]
     public function getByGroup(Question $question, int $groupId): Response
     {
@@ -53,6 +56,9 @@ class QuestionController extends AbstractController
         return $this->json($data);
     }
 
+    /**
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
+     */
     #[Route('/questions/{question<\d+>}', name: 'app_questions_get', methods: ['GET'])]
     public function getQuestion(Question $question): Response
     {
@@ -106,8 +112,10 @@ class QuestionController extends AbstractController
     #[Route('/group/{groupId<\d+>}/questions', name: 'app_group_questions_list', methods: ['GET'])]
     public function listByGroup(int $groupId, Request $request): Response
     {
+        $page  = (int)$request->query->get('page', 1);
+        $limit = (int)$request->query->get('limit', 20);
         $searchString = $request->query->get('search', '');
-        $questions = $this->questionRepository->findByNameAndGroup($searchString, $groupId);
+        $questions = $this->questionRepository->findByNameAndGroup($searchString, $groupId, $page, $limit);
         $data = $this->serializer->normalize($questions);
         return $this->json($data);
     }
@@ -115,8 +123,10 @@ class QuestionController extends AbstractController
     #[Route('/questions', name: 'app_questions_list', methods: ['GET'])]
     public function list(Request $request): Response
     {
+        $page  = (int)$request->query->get('page', 1);
+        $limit = (int)$request->query->get('limit', 20);
         $searchString = $request->query->get('search', '');
-        $questions = $this->questionRepository->findByNameAndGroup($searchString);
+        $questions = $this->questionRepository->findByNameAndGroup($searchString, null, $page, $limit);
         $data = $this->serializer->normalize($questions);
         return $this->json($data);
     }

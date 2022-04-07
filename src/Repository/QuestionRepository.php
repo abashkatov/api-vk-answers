@@ -49,8 +49,11 @@ class QuestionRepository extends ServiceEntityRepository
     /**
      * @return Question[] Returns an array of Tag objects
      */
-    public function findByNameAndGroup(string $likeName, ?int $groupId = null): array
+    public function findByNameAndGroup(string $likeName, ?int $groupId = null, int $page = 1, $limit = 20): array
     {
+        $page = max(1, $page);
+        $limit = max(1, $limit);
+        $offset = ($page - 1) * $limit;
         $qb = $this->createQueryBuilder('q');
         if (\is_null($groupId)) {
             $qb = $qb->andWhere('q.groupId is null');
@@ -65,7 +68,8 @@ class QuestionRepository extends ServiceEntityRepository
                 ->setParameter('likeName', '%' . $likeName . '%');
         }
         return $qb
-            ->setMaxResults(10)
+            ->setFirstResult($offset)
+            ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
     }
