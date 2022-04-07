@@ -35,7 +35,7 @@ class AnswerController extends AbstractController
         $this->serializer       = $serializer;
         $this->userRepository   = $userRepository;
         $this->answerRepository = $answerRepository;
-        $this->em = $em;
+        $this->em               = $em;
     }
 
     /**
@@ -73,6 +73,30 @@ class AnswerController extends AbstractController
 
     /**
      * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
+     */
+    #[Route('/questions/{question<\d+>}/answers/{answer<\d+>}/best', name: 'app_questions_answers_set_best', methods: ['POST'])]
+    public function setBestAnswer(Question $question, Answer $answer, Request $request): Response
+    {
+        $userVkId = (int)$request->headers->get('X-VK-ID');
+        if (
+            $question->getAuthor() === null || $answer->getQuestion() === null ||
+            $question->getAuthor()->getVkId() !== $userVkId || $answer->getQuestion()->getId() !== $question->getId()
+        ) {
+            throw new NotFoundHttpException();
+        }
+        if ($question->getBestAnswer() !== null) {
+            $question->getBestAnswer()->setIsBest(false);
+        }
+        $answer->setIsBest(true);
+        $question->setBestAnswer($answer);
+        $this->em->flush();
+        $data = $this->serializer->normalize($answer);
+
+        return $this->json($data);
+    }
+
+    /**
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      * @throws \Doctrine\ORM\OptimisticLockException
      * @throws \Doctrine\ORM\ORMException
      */
@@ -82,7 +106,12 @@ class AnswerController extends AbstractController
         if ($answer->getQuestion() === null || $answer->getQuestion()->getId() !== $question->getId()) {
             throw new NotFoundHttpException();
         }
-        $this->serializer->deserialize($request->getContent(), Answer::class, JsonEncoder::FORMAT, [AbstractNormalizer::OBJECT_TO_POPULATE => $answer]);
+        $this->serializer->deserialize(
+            $request->getContent(),
+            Answer::class,
+            JsonEncoder::FORMAT,
+            [AbstractNormalizer::OBJECT_TO_POPULATE => $answer]
+        );
         $answer->setUpdatedAt(new \DateTime());
         $this->em->flush();
         $data = $this->serializer->normalize($answer);

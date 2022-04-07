@@ -32,6 +32,9 @@ class Answer
     #[ORM\Column(type: 'datetime')]
     private $updated_at;
 
+    #[ORM\Column(type: 'boolean', nullable: false, options: ['default' => false])]
+    private bool $isBest = false;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -93,6 +96,18 @@ class Answer
     public function setUpdatedAt(\DateTimeInterface $updated_at): self
     {
         $this->updated_at = $updated_at;
+
+        return $this;
+    }
+
+    public function isBest(): bool
+    {
+        return $this->isBest;
+    }
+
+    public function setIsBest(bool $isBest): self
+    {
+        $this->isBest = $isBest;
 
         return $this;
     }

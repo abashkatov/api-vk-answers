@@ -45,9 +45,14 @@ class Question
     #[ORM\OneToMany(mappedBy: 'question', targetEntity: Answer::class)]
     private Collection $answers;
 
+    #[Ignore]
+    #[ORM\OneToOne(targetEntity: Answer::class)]
+    #[ORM\JoinColumn(nullable: true)]
+    private ?Answer $bestAnswer = null;
+
     public function __construct()
     {
-        $this->tags = new ArrayCollection();
+        $this->tags    = new ArrayCollection();
         $this->answers = new ArrayCollection();
     }
 
@@ -200,6 +205,18 @@ class Question
                 $answer->setQuestion(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getBestAnswer(): ?Answer
+    {
+        return $this->bestAnswer;
+    }
+
+    public function setBestAnswer(?Answer $bestAnswer): self
+    {
+        $this->bestAnswer = $bestAnswer;
 
         return $this;
     }
