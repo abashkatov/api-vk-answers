@@ -36,6 +36,15 @@ class QuestionController extends AbstractController
         $this->tagRepository = $tagRepository;
     }
 
+    #[Route('/group/{groupId}/questions', name: 'app_group_questions_list', requirements: ['groupId' => '\d+'], methods: ['GET'])]
+    public function listByGroup(int $groupId, Request $request): Response
+    {
+        $searchString = $request->query->get('search', '');
+        $questions = $this->questionRepository->findByNameAndGroup($searchString, $groupId);
+        $data = $this->serializer->normalize($questions);
+        return $this->json($data);
+    }
+
     #[Route('/questions', name: 'app_questions_list', methods: ['GET'])]
     public function list(Request $request): Response
     {
