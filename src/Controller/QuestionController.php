@@ -158,7 +158,7 @@ class QuestionController extends AbstractController
     #[Route('/questions/my', name: 'app_questions_my_list', methods: ['GET'])]
     public function listMy(Request $request): Response
     {
-        $userVkId     = $request->headers->get('X-VK-ID');
+        $userVkId     = (int)$request->headers->get('X-VK-ID');
         $page         = (int)$request->query->get('page', 1);
         $limit        = (int)$request->query->get('limit', 20);
         $searchString = $request->query->get('search', '');

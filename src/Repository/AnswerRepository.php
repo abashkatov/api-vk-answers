@@ -6,6 +6,7 @@ use App\Entity\Answer;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\OptimisticLockException;
 use Doctrine\ORM\ORMException;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -43,6 +44,36 @@ class AnswerRepository extends ServiceEntityRepository
         if ($flush) {
             $this->_em->flush();
         }
+    }
+
+    /**
+     * @return Answer[]
+     */
+    public function findByNameAndUserVkId(string $searchString, int $userVkId, int $page, int $limit): array {
+        return $this
+            ->createQueryBuilderBySearchAndPage($searchString, $page, $limit)
+            ->join('a.author', 'author')
+            ->andWhere('author.vkId = :vkId')
+            ->setParameter('vkId', $userVkId)
+            ->getQuery()
+            ->getResult();
+    }
+
+    private function createQueryBuilderBySearchAndPage(string $searchString, int $page, int $limit): QueryBuilder
+    {
+        $page   = max(1, $page);
+        $limit  = max(1, $limit);
+        $offset = ($page - 1) * $limit;
+        $qb     = $this->createQueryBuilder('a');
+        if (!empty($searchString)) {
+            $qb = $qb
+                ->andWhere($qb->expr()->like('a.title', ':likeName'))
+                ->setParameter('likeName', '%' . $searchString . '%');
+        }
+
+        return $qb
+            ->setFirstResult($offset)
+            ->setMaxResults($limit);
     }
 
     // /**

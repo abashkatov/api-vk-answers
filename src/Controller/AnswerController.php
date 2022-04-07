@@ -57,6 +57,22 @@ class AnswerController extends AbstractController
 
     /**
      * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
+     */
+    #[Route('/answers/my', name: 'app_answers_my', methods: ['GET'])]
+    public function listMy(Request $request): Response
+    {
+        $userVkId     = (int)$request->headers->get('X-VK-ID');
+        $page         = (int)$request->query->get('page', 1);
+        $limit        = (int)$request->query->get('limit', 20);
+        $searchString = $request->query->get('search', '');
+        $questions    = $this->answerRepository->findByNameAndUserVkId($searchString, $userVkId, $page, $limit);
+        $data         = $this->serializer->normalize($questions);
+
+        return $this->json($data);
+    }
+
+    /**
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      * @throws \Doctrine\ORM\OptimisticLockException
      * @throws \Doctrine\ORM\ORMException
      */
