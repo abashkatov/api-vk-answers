@@ -19,27 +19,32 @@ class User
     private $id;
 
     #[ORM\Column(type: 'string', length: 255)]
-    private $username;
+    private string $username = '';
 
     #[ORM\Column(type: 'integer')]
-    private $vkId;
+    private int $vkId = 0;
 
     #[ORM\Column(type: 'string', length: 255)]
-    private $photoUri;
+    private string $photoUri = '';
 
     #[ORM\Column(type: 'string', length: 255)]
-    private $vkCode = '';
+    private string $vkCode = '';
 
     #[ORM\Column(type: 'string', length: 255)]
-    private $vkAccessToken = '';
+    private string $vkAccessToken = '';
 
     #[Ignore]
     #[ORM\OneToMany(mappedBy: 'author', targetEntity: Question::class)]
-    private $questions;
+    private Collection $questions;
+
+    #[Ignore]
+    #[ORM\OneToMany(mappedBy: 'author', targetEntity: Answer::class)]
+    private Collection $answers;
 
     public function __construct()
     {
         $this->questions = new ArrayCollection();
+        $this->answers = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -131,6 +136,36 @@ class User
             // set the owning side to null (unless already changed)
             if ($question->getAuthor() === $this) {
                 $question->setAuthor(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Answer>
+     */
+    public function getAnswers(): Collection
+    {
+        return $this->answers;
+    }
+
+    public function addAnswer(Answer $answer): self
+    {
+        if (!$this->answers->contains($answer)) {
+            $this->answers[] = $answer;
+            $answer->setAuthor($this);
+        }
+
+        return $this;
+    }
+
+    public function removeAnswer(Answer $answer): self
+    {
+        if ($this->answers->removeElement($answer)) {
+            // set the owning side to null (unless already changed)
+            if ($answer->getAuthor() === $this) {
+                $answer->setAuthor(null);
             }
         }
 

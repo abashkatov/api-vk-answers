@@ -52,6 +52,10 @@ class TagRepository extends ServiceEntityRepository
      */
     public function findAllByTagNames(array $names): array
     {
+        if (empty($names)) {
+            return [];
+        }
+
         $qb = $this->createQueryBuilder('t');
 
         return $qb
