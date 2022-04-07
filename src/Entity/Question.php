@@ -142,6 +142,16 @@ class Question
         return $this->tags;
     }
 
+    /**
+     * @param  Collection<int, Tag>
+     */
+    public function setTags(Collection $tags): self
+    {
+        $this->tags = $tags;
+
+        return $this;
+    }
+
     public function addTag(Tag $tag): self
     {
         if (!$this->tags->contains($tag)) {

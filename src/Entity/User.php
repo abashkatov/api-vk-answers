@@ -22,16 +22,16 @@ class User
     private $username;
 
     #[ORM\Column(type: 'integer')]
-    private $vk_id;
+    private $vkId;
 
     #[ORM\Column(type: 'string', length: 255)]
-    private $photo_uri;
+    private $photoUri;
 
     #[ORM\Column(type: 'string', length: 255)]
-    private $vk_code = '';
+    private $vkCode = '';
 
     #[ORM\Column(type: 'string', length: 255)]
-    private $vk_access_token = '';
+    private $vkAccessToken = '';
 
     #[Ignore]
     #[ORM\OneToMany(mappedBy: 'author', targetEntity: Question::class)]
@@ -61,48 +61,48 @@ class User
 
     public function getVkId(): ?int
     {
-        return $this->vk_id;
+        return $this->vkId;
     }
 
-    public function setVkId(int $vk_id): self
+    public function setVkId(int $vkId): self
     {
-        $this->vk_id = $vk_id;
+        $this->vkId = $vkId;
 
         return $this;
     }
 
     public function getPhotoUri(): ?string
     {
-        return $this->photo_uri;
+        return $this->photoUri;
     }
 
-    public function setPhotoUri(string $photo_uri): self
+    public function setPhotoUri(string $photoUri): self
     {
-        $this->photo_uri = $photo_uri;
+        $this->photoUri = $photoUri;
 
         return $this;
     }
 
     public function getVkCode(): ?string
     {
-        return $this->vk_code;
+        return $this->vkCode;
     }
 
-    public function setVkCode(string $vk_code): self
+    public function setVkCode(string $vkCode): self
     {
-        $this->vk_code = $vk_code;
+        $this->vkCode = $vkCode;
 
         return $this;
     }
 
     public function getVkAccessToken(): ?string
     {
-        return $this->vk_access_token;
+        return $this->vkAccessToken;
     }
 
-    public function setVkAccessToken(string $vk_access_token): self
+    public function setVkAccessToken(string $vkAccessToken): self
     {
-        $this->vk_access_token = $vk_access_token;
+        $this->vkAccessToken = $vkAccessToken;
 
         return $this;
     }

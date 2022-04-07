@@ -46,11 +46,27 @@ class TagRepository extends ServiceEntityRepository
     }
 
     /**
+     * @param string[] $names
+     *
+     * @return Tag[] Returns an array of Tag objects
+     */
+    public function findAllByTagNames(array $names): array
+    {
+        $qb = $this->createQueryBuilder('t');
+
+        return $qb
+            ->andWhere($qb->expr()->in('t.tagName', $names))
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
      * @return Tag[] Returns an array of Tag objects
      */
     public function findByTagName(string $likeName): array
     {
         $qb = $this->createQueryBuilder('t');
+
         return $qb
             ->andWhere($qb->expr()->like('t.tagName', ':val'))
             ->setParameter('val', '%' . $likeName . '%')
