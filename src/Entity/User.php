@@ -6,6 +6,8 @@ use App\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Serializer\Annotation\Ignore;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: '`user`')]
@@ -26,11 +28,12 @@ class User
     private $photo_uri;
 
     #[ORM\Column(type: 'string', length: 255)]
-    private $vk_code;
+    private $vk_code = '';
 
     #[ORM\Column(type: 'string', length: 255)]
-    private $vk_access_token;
+    private $vk_access_token = '';
 
+    #[Ignore]
     #[ORM\OneToMany(mappedBy: 'author', targetEntity: Question::class)]
     private $questions;
 

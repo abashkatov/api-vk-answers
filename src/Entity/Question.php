@@ -15,7 +15,7 @@ class Question
     #[ORM\Column(type: 'integer')]
     private $id;
 
-    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'questions')]
+    #[ORM\ManyToOne(targetEntity: User::class, cascade: ['persist'], inversedBy: 'questions')]
     #[ORM\JoinColumn(nullable: false)]
     private $author;
 
@@ -26,10 +26,10 @@ class Question
     private $updated_at;
 
     #[ORM\Column(type: 'integer')]
-    private $vote_count;
+    private $vote_count = 0;
 
     #[ORM\Column(type: 'integer', nullable: true)]
-    private $groupId;
+    private ?int $groupId = null;
 
     #[ORM\Column(type: 'string', length: 255)]
     private $title;
@@ -37,8 +37,8 @@ class Question
     #[ORM\Column(type: 'text')]
     private $question_text;
 
-    #[ORM\ManyToMany(targetEntity: Tag::class)]
-    private $tags;
+    #[ORM\ManyToMany(targetEntity: Tag::class, cascade: ['persist'])]
+    private Collection $tags;
 
     public function __construct()
     {
