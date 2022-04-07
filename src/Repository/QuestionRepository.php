@@ -113,6 +113,18 @@ class QuestionRepository extends ServiceEntityRepository
             ->getArrayResult();
     }
 
+    public function findByNameAndUserVkIdAndGroupId(string $searchString, int $userVkId, int $groupId, int $page, int $limit) {
+        return $this
+            ->createQueryBuilderBySearchAndPage($searchString, $page, $limit)
+            ->join('q.author', 'a')
+            ->andWhere('a.vkId = :vkId')
+            ->andWhere('q.groupId = :groupId')
+            ->setParameter('groupId', $groupId)
+            ->setParameter('vkId', $userVkId)
+            ->getQuery()
+            ->getResult();
+    }
+
     // /**
     //  * @return Question[] Returns an array of Question objects
     //  */

@@ -43,7 +43,7 @@ class QuestionController extends AbstractController
         $this->userRepository     = $userRepository;
         $this->tagRepository      = $tagRepository;
         $this->em                 = $em;
-        $this->logger = $logger;
+        $this->logger             = $logger;
     }
 
     /**
@@ -174,6 +174,22 @@ class QuestionController extends AbstractController
         $limit        = (int)$request->query->get('limit', 20);
         $searchString = $request->query->get('search', '');
         $questions    = $this->questionRepository->findByNameAndUserVkId($searchString, $userVkId, $page, $limit);
+        $data         = $this->serializer->normalize($questions);
+
+        return $this->json($data);
+    }
+
+    /**
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
+     */
+    #[Route('/group/{groupId<\d+>}/questions/my', name: 'app_group_questions_my_list', methods: ['GET'])]
+    public function listGroupMy(int $groupId, Request $request): Response
+    {
+        $userVkId     = (int)$request->headers->get('X-VK-ID');
+        $page         = (int)$request->query->get('page', 1);
+        $limit        = (int)$request->query->get('limit', 20);
+        $searchString = $request->query->get('search', '');
+        $questions    = $this->questionRepository->findByNameAndUserVkIdAndGroupId($searchString, $userVkId, $groupId, $page, $limit);
         $data         = $this->serializer->normalize($questions);
 
         return $this->json($data);
