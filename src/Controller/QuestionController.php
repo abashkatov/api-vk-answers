@@ -12,6 +12,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Serializer\Serializer;
 use Symfony\Component\Serializer\SerializerInterface;
@@ -36,7 +37,27 @@ class QuestionController extends AbstractController
         $this->tagRepository = $tagRepository;
     }
 
-    #[Route('/group/{groupId}/questions', name: 'app_group_questions_list', requirements: ['groupId' => '\d+'], methods: ['GET'])]
+    #[Route('/group/{groupId<\d+>}/questions/{question<\d+>}', name: 'app_group_questions_get', methods: ['GET'])]
+    public function getByGroup(Question $question, int $groupId): Response
+    {
+        if ($question->getGroupId() !== $groupId) {
+            throw new NotFoundHttpException();
+        }
+        $data = $this->serializer->normalize($question);
+        return $this->json($data);
+    }
+
+    #[Route('/questions/{question<\d+>}', name: 'app_questions_get', methods: ['GET'])]
+    public function getQuestion(Question $question): Response
+    {
+        if ($question->getGroupId() !== null) {
+            throw new NotFoundHttpException();
+        }
+        $data = $this->serializer->normalize($question);
+        return $this->json($data);
+    }
+
+    #[Route('/group/{groupId<\d+>}/questions', name: 'app_group_questions_list', methods: ['GET'])]
     public function listByGroup(int $groupId, Request $request): Response
     {
         $searchString = $request->query->get('search', '');
