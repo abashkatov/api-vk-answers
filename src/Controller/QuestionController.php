@@ -23,9 +23,10 @@ class QuestionController extends AbstractController
     }
 
     #[Route('/questions', name: 'app_questions_list', methods: ['GET'])]
-    public function list(): Response
+    public function list(Request $request): Response
     {
-        $questions = $this->questionRepository->findBy(['groupId' => null]);
+        $searchString = $request->query->get('search', '');
+        $questions = $this->questionRepository->findByNameAndGroup($searchString);
         $data = $this->serializer->normalize($questions);
         return $this->json($data);
     }

@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\Question;
+use App\Entity\Tag;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\OptimisticLockException;
 use Doctrine\ORM\ORMException;
@@ -43,6 +44,30 @@ class QuestionRepository extends ServiceEntityRepository
         if ($flush) {
             $this->_em->flush();
         }
+    }
+
+    /**
+     * @return Question[] Returns an array of Tag objects
+     */
+    public function findByNameAndGroup(string $likeName, ?int $groupId = null): array
+    {
+        $qb = $this->createQueryBuilder('q');
+        if (\is_null($groupId)) {
+            $qb = $qb->andWhere('q.groupId is null');
+        } else {
+            $qb = $qb
+                ->andWhere('q.groupId = :groupId')
+                ->setParameter('groupId', $groupId);
+        }
+        if (!empty($likeName)) {
+            $qb = $qb
+                ->andWhere($qb->expr()->like('q.title', ':likeName'))
+                ->setParameter('likeName', '%' . $likeName . '%');
+        }
+        return $qb
+            ->setMaxResults(10)
+            ->getQuery()
+            ->getResult();
     }
 
     // /**
