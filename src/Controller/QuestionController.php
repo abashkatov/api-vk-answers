@@ -93,7 +93,7 @@ class QuestionController extends AbstractController
      * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      * @throws \JsonException
      */
-    #[Route('/questions/{question<\d+>}', name: 'app_questions_get', methods: ['PATCH'])]
+    #[Route('/questions/{question<\d+>}', name: 'app_questions_patch', methods: ['PATCH'])]
     public function patchQuestion(Question $question, Request $request): Response
     {
         if ($question->getGroupId() !== null) {
