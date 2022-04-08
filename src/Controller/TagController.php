@@ -17,7 +17,7 @@ class TagController extends AbstractController
         $this->tagRepository = $tagRepository;
     }
 
-    #[Route('/tags', name: 'app_tags')]
+    #[Route('/tags', name: 'app_tags', methods: ['GET'])]
     public function list(Request $request): Response
     {
         $searchString = $request->query->get('search', '');
