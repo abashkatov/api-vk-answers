@@ -49,18 +49,20 @@ class AnswerRepository extends ServiceEntityRepository
     /**
      * @return Answer[]
      */
-    public function findByNameAndUserVkId(string $searchString, int $userVkId, int $page, int $limit): array {
+    public function findByNameAndUserVkId(string $searchString, int $userVkId, int $page, int $limit): array
+    {
         return $this
-            ->createQueryBuilderBySearchAndPage($searchString, $page, $limit)
-            ->join('a.author', 'author')
-            ->andWhere('author.vkId = :vkId')
-            ->setParameter('vkId', $userVkId)
+            ->createQueryBuilderBySearchAndPage($searchString, $userVkId, $page, $limit)
             ->getQuery()
             ->getResult();
     }
 
-    private function createQueryBuilderBySearchAndPage(string $searchString, int $page, int $limit): QueryBuilder
-    {
+    private function createQueryBuilderBySearchAndPage(
+        string $searchString,
+        int $userVkId,
+        int $page,
+        int $limit
+    ): QueryBuilder {
         $page   = max(1, $page);
         $limit  = max(1, $limit);
         $offset = ($page - 1) * $limit;
@@ -72,8 +74,30 @@ class AnswerRepository extends ServiceEntityRepository
         }
 
         return $qb
+            ->join('a.author', 'author')
+            ->andWhere('author.vkId = :vkId')
+            ->setParameter('vkId', $userVkId)
             ->setFirstResult($offset)
             ->setMaxResults($limit);
+    }
+
+    /**
+     * @return Answer[]
+     */
+    public function findByNameAndUserVkIdAndGroupId(
+        string $searchString,
+        int $userVkId,
+        int $groupId,
+        int $page,
+        int $limit
+    ): array {
+        return $this
+            ->createQueryBuilderBySearchAndPage($searchString, $userVkId, $page, $limit)
+            ->join('a.question', 'q')
+            ->andWhere('q.groupId = :groupId')
+            ->setParameter('groupId', $groupId)
+            ->getQuery()
+            ->getResult();
     }
 
     // /**

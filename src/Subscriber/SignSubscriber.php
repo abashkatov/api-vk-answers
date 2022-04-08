@@ -37,8 +37,9 @@ class SignSubscriber implements EventSubscriberInterface
         $sign = rtrim(strtr(base64_encode(hash_hmac('sha256', $sign_params_query, $this->appToken, true)), '+/', '-_'), '='); // Получаем хеш-код от строки, используя защищеный ключ приложения. Генерация на основе метода HMAC.
 
         $status = $sign === $query_params['sign']; // Сравниваем
-        if (!$status || !isset($sign_params['vk_user_id']) || $userVkId !== $sign_params['vk_user_id'])
-        throw new UnauthorizedHttpException('Wrong sign');
+        if (!$status || !isset($sign_params['vk_user_id']) || $userVkId !== $sign_params['vk_user_id']) {
+            throw new UnauthorizedHttpException('Wrong sign');
+        }
     }
 
     public static function getSubscribedEvents(): array

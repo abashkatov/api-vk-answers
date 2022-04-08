@@ -82,6 +82,22 @@ class AnswerController extends AbstractController
     /**
      * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
+    #[Route('/group/{groupId<\d+>}/answers/my', name: 'app_group_answers_my', methods: ['GET'])]
+    public function listGroupMy(int $groupId, Request $request): Response
+    {
+        $userVkId     = (int)$request->headers->get('X-VK-ID');
+        $page         = (int)$request->query->get('page', 1);
+        $limit        = (int)$request->query->get('limit', 20);
+        $searchString = (string)$request->query->get('search', '');
+        $questions    = $this->answerRepository->findByNameAndUserVkIdAndGroupId($searchString, $userVkId, $groupId, $page, $limit);
+        $data         = $this->serializer->normalize($questions);
+
+        return $this->json($data);
+    }
+
+    /**
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
+     */
     #[Route('/questions/{question<\d+>}/answers/{answer<\d+>}/best', name: 'app_questions_answers_set_best', methods: ['POST'])]
     public function setBestAnswer(Question $question, Answer $answer, Request $request): Response
     {
