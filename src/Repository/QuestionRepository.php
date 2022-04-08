@@ -49,11 +49,18 @@ class QuestionRepository extends ServiceEntityRepository
     }
 
     /**
+     * @param string[] $tagNames
+     *
      * @return Question[] Returns an array of Tag objects
      */
-    public function findByNameAndGroup(string $searchString, ?int $groupId = null, int $page = 1, $limit = 20): array
-    {
-        $qb = $this->createQueryBuilderBySearchAndPage($searchString, $page, $limit);
+    public function findByNameAndGroup(
+        string $searchString,
+        ?int $groupId = null,
+        array $tagNames = [],
+        int $page = 1,
+        $limit = 20
+    ): array {
+        $qb = $this->createQueryBuilderBySearchAndPage($searchString, $tagNames, $page, $limit);
         if (\is_null($groupId)) {
             $qb = $qb->andWhere('q.groupId is null');
         } else {
@@ -67,8 +74,13 @@ class QuestionRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    private function createQueryBuilderBySearchAndPage(string $searchString, int $page, int $limit): QueryBuilder
-    {
+    /** @param string[] $tagNames */
+    private function createQueryBuilderBySearchAndPage(
+        string $searchString,
+        array $tagNames,
+        int $page,
+        int $limit
+    ): QueryBuilder {
         $page   = max(1, $page);
         $limit  = max(1, $limit);
         $offset = ($page - 1) * $limit;
@@ -78,6 +90,11 @@ class QuestionRepository extends ServiceEntityRepository
                 ->andWhere($qb->expr()->like('q.title', ':likeName'))
                 ->setParameter('likeName', '%' . $searchString . '%');
         }
+        if (!empty($tagNames)) {
+            $qb = $qb
+                ->join('q.tags', 't')
+                ->andWhere($qb->expr()->in('t.tagName', $tagNames));
+        }
 
         return $qb
             ->setFirstResult($offset)
@@ -85,12 +102,19 @@ class QuestionRepository extends ServiceEntityRepository
     }
 
     /**
+     * @param string[] $tagNames
+     *
      * @return Question[] Returns an array of Tag objects
      */
-    public function findByNameAndUserVkId(string $searchString, int $userVkId, int $page, int $limit): array
-    {
+    public function findByNameAndUserVkId(
+        string $searchString,
+        int $userVkId,
+        array $tagNames,
+        int $page,
+        int $limit
+    ): array {
         return $this
-            ->createQueryBuilderBySearchAndPage($searchString, $page, $limit)
+            ->createQueryBuilderBySearchAndPage($searchString, $tagNames, $page, $limit)
             ->join('q.author', 'a')
             ->andWhere('a.vkId = :vkId')
             ->setParameter('vkId', $userVkId)
@@ -116,9 +140,17 @@ class QuestionRepository extends ServiceEntityRepository
             ->getArrayResult();
     }
 
-    public function findByNameAndUserVkIdAndGroupId(string $searchString, int $userVkId, int $groupId, int $page, int $limit) {
+    /** @param string[] $tagNames */
+    public function findByNameAndUserVkIdAndGroupId(
+        string $searchString,
+        int $userVkId,
+        int $groupId,
+        array $tagNames,
+        int $page,
+        int $limit
+    ) {
         return $this
-            ->createQueryBuilderBySearchAndPage($searchString, $page, $limit)
+            ->createQueryBuilderBySearchAndPage($searchString, $tagNames, $page, $limit)
             ->join('q.author', 'a')
             ->andWhere('a.vkId = :vkId')
             ->andWhere('q.groupId = :groupId')

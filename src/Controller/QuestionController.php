@@ -149,8 +149,10 @@ class QuestionController extends AbstractController
         $this->logger->debug(__METHOD__);
         $page         = (int)$request->query->get('page', 1);
         $limit        = (int)$request->query->get('limit', 20);
-        $searchString = $request->query->get('search', '');
-        $questions    = $this->questionRepository->findByNameAndGroup($searchString, $groupId, $page, $limit);
+        $searchString = (string)$request->query->get('search', '');
+        $tagString    = (string)$request->query->get('tags', '');
+        $tagNames     = explode(',', $tagString);
+        $questions    = $this->questionRepository->findByNameAndGroup($searchString, $groupId, $tagNames, $page, $limit);
         $data         = $this->serializer->normalize($questions);
 
         return $this->json($data);
@@ -165,8 +167,10 @@ class QuestionController extends AbstractController
         $this->logger->debug(__METHOD__);
         $page         = (int)$request->query->get('page', 1);
         $limit        = (int)$request->query->get('limit', 20);
-        $searchString = $request->query->get('search', '');
-        $questions    = $this->questionRepository->findByNameAndGroup($searchString, null, $page, $limit);
+        $searchString = (string)$request->query->get('search', '');
+        $tagString    = (string)$request->query->get('tags', '');
+        $tagNames     = explode(',', $tagString);
+        $questions    = $this->questionRepository->findByNameAndGroup($searchString, null, $tagNames, $page, $limit);
         $data         = $this->serializer->normalize($questions);
 
         return $this->json($data);
@@ -182,8 +186,10 @@ class QuestionController extends AbstractController
         $userVkId     = (int)$request->headers->get('X-VK-ID');
         $page         = (int)$request->query->get('page', 1);
         $limit        = (int)$request->query->get('limit', 20);
-        $searchString = $request->query->get('search', '');
-        $questions    = $this->questionRepository->findByNameAndUserVkId($searchString, $userVkId, $page, $limit);
+        $searchString = (string)$request->query->get('search', '');
+        $tagString    = (string)$request->query->get('tags', '');
+        $tagNames     = explode(',', $tagString);
+        $questions    = $this->questionRepository->findByNameAndUserVkId($searchString, $userVkId, $tagNames, $page, $limit);
         $data         = $this->serializer->normalize($questions);
 
         return $this->json($data);
@@ -198,11 +204,14 @@ class QuestionController extends AbstractController
         $userVkId     = (int)$request->headers->get('X-VK-ID');
         $page         = (int)$request->query->get('page', 1);
         $limit        = (int)$request->query->get('limit', 20);
-        $searchString = $request->query->get('search', '');
+        $searchString = (string)$request->query->get('search', '');
+        $tagString    = (string)$request->query->get('tags', '');
+        $tagNames     = explode(',', $tagString);
         $questions    = $this->questionRepository->findByNameAndUserVkIdAndGroupId(
             $searchString,
             $userVkId,
             $groupId,
+            $tagNames,
             $page,
             $limit
         );
