@@ -15,6 +15,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
@@ -127,8 +128,12 @@ class AnswerController extends AbstractController
     #[Route('/questions/{question<\d+>}/answers/{answer<\d+>}', name: 'app_questions_answer_patch', methods: ['PATCH'])]
     public function patch(Question $question, Answer $answer, Request $request): Response
     {
+        $userVkId = (int)$request->headers->get('X-VK-ID');
         if ($answer->getQuestion() === null || $answer->getQuestion()->getId() !== $question->getId()) {
             throw new NotFoundHttpException();
+        }
+        if ($answer->getAuthor() === null || $answer->getAuthor()->getId() !== $userVkId) {
+            throw new UnauthorizedHttpException('Permissions denied');
         }
         $this->serializer->deserialize(
             $request->getContent(),
@@ -153,6 +158,10 @@ class AnswerController extends AbstractController
     {
         /** @var Answer $answer */
         $answer = $this->serializer->deserialize($request->getContent(), Answer::class, JsonEncoder::FORMAT);
+        $userVkId = (int)$request->headers->get('X-VK-ID');
+        if ($answer->getAuthor() === null || $answer->getAuthor()->getId() !== $userVkId) {
+            throw new UnauthorizedHttpException('Permissions denied');
+        }
         $author = $this->userRepository->findOneBy(['vkId' => $answer->getAuthor()?->getVkId()]);
         if ($author instanceof User) {
             $answer->setAuthor($author);

@@ -19,6 +19,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
@@ -105,6 +106,10 @@ class QuestionController extends AbstractController
             JsonEncoder::FORMAT,
             [AbstractNormalizer::OBJECT_TO_POPULATE => $question]
         );
+        $userVkId = (int)$request->headers->get('X-VK-ID');
+        if ($question->getAuthor() === null || $question->getAuthor()->getId() !== $userVkId) {
+            throw new UnauthorizedHttpException('Permissions denied');
+        }
         $question->setVoteCount($votes);
         $question->setUpdatedAt(new \DateTime());
         $this->em->flush();
@@ -132,6 +137,10 @@ class QuestionController extends AbstractController
             JsonEncoder::FORMAT,
             [AbstractNormalizer::OBJECT_TO_POPULATE => $question]
         );
+        $userVkId = (int)$request->headers->get('X-VK-ID');
+        if ($question->getAuthor() === null || $question->getAuthor()->getId() !== $userVkId) {
+            throw new UnauthorizedHttpException('Permissions denied');
+        }
         $question->setVoteCount($votes);
         $question->setUpdatedAt(new \DateTime());
         $this->em->flush();
@@ -152,7 +161,13 @@ class QuestionController extends AbstractController
         $searchString = (string)$request->query->get('search', '');
         $tagString    = (string)$request->query->get('tags', '');
         $tagNames     = explode(',', $tagString);
-        $questions    = $this->questionRepository->findByNameAndGroup($searchString, $groupId, $tagNames, $page, $limit);
+        $questions    = $this->questionRepository->findByNameAndGroup(
+            $searchString,
+            $groupId,
+            $tagNames,
+            $page,
+            $limit
+        );
         $data         = $this->serializer->normalize($questions);
 
         return $this->json($data);
@@ -189,7 +204,13 @@ class QuestionController extends AbstractController
         $searchString = (string)$request->query->get('search', '');
         $tagString    = (string)$request->query->get('tags', '');
         $tagNames     = explode(',', $tagString);
-        $questions    = $this->questionRepository->findByNameAndUserVkId($searchString, $userVkId, $tagNames, $page, $limit);
+        $questions    = $this->questionRepository->findByNameAndUserVkId(
+            $searchString,
+            $userVkId,
+            $tagNames,
+            $page,
+            $limit
+        );
         $data         = $this->serializer->normalize($questions);
 
         return $this->json($data);
@@ -233,7 +254,11 @@ class QuestionController extends AbstractController
         $data = json_decode($request->getContent(), true, 512, JSON_THROW_ON_ERROR);
         /** @var Question $question */
         $question = $this->serializer->denormalize($data, Question::class);
-        $author   = $this->userRepository->findOneBy(['vkId' => $question->getAuthor()?->getVkId()]);
+        $userVkId = (int)$request->headers->get('X-VK-ID');
+        if ($question->getAuthor() === null || $question->getAuthor()->getId() !== $userVkId) {
+            throw new UnauthorizedHttpException('Permissions denied');
+        }
+        $author = $this->userRepository->findOneBy(['vkId' => $question->getAuthor()?->getVkId()]);
         if ($author instanceof User) {
             $question->setAuthor($author);
         }
