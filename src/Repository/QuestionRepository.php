@@ -90,6 +90,7 @@ class QuestionRepository extends ServiceEntityRepository
                 ->andWhere($qb->expr()->like('q.title', ':likeName'))
                 ->setParameter('likeName', '%' . $searchString . '%');
         }
+        $tagNames = \array_filter($tagNames);
         if (!empty($tagNames)) {
             $qb = $qb
                 ->join('q.tags', 't')
