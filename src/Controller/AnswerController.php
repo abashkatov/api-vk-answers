@@ -6,7 +6,9 @@ use App\Entity\Answer;
 use App\Entity\Question;
 use App\Entity\User;
 use App\Repository\AnswerRepository;
+use App\Repository\AnswerVoteRepository;
 use App\Repository\UserRepository;
+use App\Service\AnswerVoteService;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -25,20 +27,23 @@ class AnswerController extends AbstractController
     private UserRepository         $userRepository;
     private AnswerRepository       $answerRepository;
     private EntityManagerInterface $em;
-    private LoggerInterface        $logger;
+    private AnswerVoteService      $answerVoteService;
+    private AnswerVoteRepository   $answerVoteRepository;
 
     public function __construct(
         SerializerInterface $serializer,
         UserRepository $userRepository,
         AnswerRepository $answerRepository,
         EntityManagerInterface $em,
-        LoggerInterface $logger,
+        AnswerVoteService $answerVoteService,
+        AnswerVoteRepository $answerVoteRepository,
     ) {
-        $this->serializer       = $serializer;
-        $this->userRepository   = $userRepository;
-        $this->answerRepository = $answerRepository;
-        $this->em               = $em;
-        $this->logger = $logger;
+        $this->serializer           = $serializer;
+        $this->userRepository       = $userRepository;
+        $this->answerRepository     = $answerRepository;
+        $this->em                   = $em;
+        $this->answerVoteService    = $answerVoteService;
+        $this->answerVoteRepository = $answerVoteRepository;
     }
 
     /**
@@ -47,7 +52,6 @@ class AnswerController extends AbstractController
     #[Route('/questions/{question<\d+>}/answers', name: 'app_questions_answers_list', methods: ['GET'])]
     public function list(Request $request): Response
     {
-        $this->logger->debug(__METHOD__);
         $page  = (int)$request->query->get('page', 1);
         $limit = (int)$request->query->get('limit', 20);
         if ($page < 1 || $limit < 1) {
@@ -65,7 +69,6 @@ class AnswerController extends AbstractController
     #[Route('/answers/my', name: 'app_answers_my', methods: ['GET'])]
     public function listMy(Request $request): Response
     {
-        $this->logger->debug(__METHOD__);
         $userVkId     = (int)$request->headers->get('X-VK-ID');
         $page         = (int)$request->query->get('page', 1);
         $limit        = (int)$request->query->get('limit', 20);
@@ -82,7 +85,6 @@ class AnswerController extends AbstractController
     #[Route('/questions/{question<\d+>}/answers/{answer<\d+>}/best', name: 'app_questions_answers_set_best', methods: ['POST'])]
     public function setBestAnswer(Question $question, Answer $answer, Request $request): Response
     {
-        $this->logger->debug(__METHOD__);
         $userVkId = (int)$request->headers->get('X-VK-ID');
         if (
             $question->getAuthor() === null || $answer->getQuestion() === null ||
@@ -109,7 +111,6 @@ class AnswerController extends AbstractController
     #[Route('/questions/{question<\d+>}/answers/{answer<\d+>}', name: 'app_questions_answer_patch', methods: ['PATCH'])]
     public function patch(Question $question, Answer $answer, Request $request): Response
     {
-        $this->logger->debug(__METHOD__);
         if ($answer->getQuestion() === null || $answer->getQuestion()->getId() !== $question->getId()) {
             throw new NotFoundHttpException();
         }
@@ -134,12 +135,9 @@ class AnswerController extends AbstractController
     #[Route('/questions/{question<\d+>}/answers', name: 'app_questions_answer_post', methods: ['POST'])]
     public function post(Question $question, Request $request): Response
     {
-        $this->logger->debug('start', $this->serializer->normalize($question));
         /** @var Answer $answer */
         $answer = $this->serializer->deserialize($request->getContent(), Answer::class, JsonEncoder::FORMAT);
-        $this->logger->debug('answer', $this->serializer->normalize($answer));
         $author = $this->userRepository->findOneBy(['vkId' => $answer->getAuthor()?->getVkId()]);
-        $this->logger->debug('author', $this->serializer->normalize($author));
         if ($author instanceof User) {
             $answer->setAuthor($author);
         }
@@ -148,6 +146,50 @@ class AnswerController extends AbstractController
             ->setCreatedAt(new \DateTimeImmutable())
             ->setUpdatedAt(new \DateTime());
         $this->answerRepository->add($answer);
+        $data = $this->serializer->normalize($answer);
+
+        return $this->json($data);
+    }
+
+    /**
+     * @throws \Doctrine\ORM\OptimisticLockException
+     * @throws \Doctrine\ORM\ORMException
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
+     */
+    #[Route('/questions/{question<\d+>}/answers/{answer<\d+>}/voteUp', name: 'app_questions_answers_vote_up', methods: ['PUT'])]
+    public function voteGroupUp(Request $request, Answer $answer, Question $question): Response
+    {
+        if ($answer->getQuestion() === null || $question->getId() !== $answer->getQuestion()->getId()) {
+            throw new NotFoundHttpException();
+        }
+        $userVkId = (int)$request->headers->get('X-VK-ID');
+        $this->answerVoteService->vote($userVkId, $answer, 1);
+        $this->em->flush();
+        $totalVote = $this->answerVoteRepository->sum($userVkId, $answer);
+        $answer->setVoteCount($totalVote);
+        $this->em->flush();
+        $data = $this->serializer->normalize($answer);
+
+        return $this->json($data);
+    }
+
+    /**
+     * @throws \Doctrine\ORM\OptimisticLockException
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
+     * @throws \Doctrine\ORM\ORMException
+     */
+    #[Route('/questions/{question<\d+>}/answers/{answer<\d+>}/voteDown', name: 'app_questions_answers_vote_down', methods: ['PUT'])]
+    public function voteGroupDown(Request $request, Answer $answer, Question $question): Response
+    {
+        if ($answer->getQuestion() === null || $question->getId() !== $answer->getQuestion()->getId()) {
+            throw new NotFoundHttpException();
+        }
+        $userVkId = (int)$request->headers->get('X-VK-ID');
+        $this->answerVoteService->vote($userVkId, $answer, -1);
+        $this->em->flush();
+        $totalVote = $this->answerVoteRepository->sum($userVkId, $answer);
+        $answer->setVoteCount($totalVote);
+        $this->em->flush();
         $data = $this->serializer->normalize($answer);
 
         return $this->json($data);

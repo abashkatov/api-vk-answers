@@ -35,6 +35,9 @@ class Answer
     #[ORM\Column(type: 'boolean', nullable: false, options: ['default' => false])]
     private bool $isBest = false;
 
+    #[ORM\Column(type: 'integer', options: ['default' => 0])]
+    private int $vote_count = 0;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -108,6 +111,18 @@ class Answer
     public function setIsBest(bool $isBest): self
     {
         $this->isBest = $isBest;
+
+        return $this;
+    }
+
+    public function getVoteCount(): int
+    {
+        return $this->vote_count;
+    }
+
+    public function setVoteCount(int $vote_count): self
+    {
+        $this->vote_count = $vote_count;
 
         return $this;
     }
