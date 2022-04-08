@@ -14,7 +14,7 @@ class Answer
     #[ORM\Column(type: 'integer')]
     private $id;
 
-    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'answers')]
+    #[ORM\ManyToOne(targetEntity: User::class, cascade: ['persist'], inversedBy: 'answers')]
     #[ORM\JoinColumn(nullable: false)]
     private $author;
 
