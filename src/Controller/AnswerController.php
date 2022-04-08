@@ -132,7 +132,7 @@ class AnswerController extends AbstractController
         if ($answer->getQuestion() === null || $answer->getQuestion()->getId() !== $question->getId()) {
             throw new NotFoundHttpException();
         }
-        if ($answer->getAuthor() === null || $answer->getAuthor()->getId() !== $userVkId) {
+        if ($answer->getAuthor() === null || $answer->getAuthor()->getVkId() !== $userVkId) {
             throw new UnauthorizedHttpException('Permissions denied');
         }
         $this->serializer->deserialize(
@@ -159,7 +159,7 @@ class AnswerController extends AbstractController
         /** @var Answer $answer */
         $answer = $this->serializer->deserialize($request->getContent(), Answer::class, JsonEncoder::FORMAT);
         $userVkId = (int)$request->headers->get('X-VK-ID');
-        if ($answer->getAuthor() === null || $answer->getAuthor()->getId() !== $userVkId) {
+        if ($answer->getAuthor() === null || $answer->getAuthor()->getVkId() !== $userVkId) {
             throw new UnauthorizedHttpException('Permissions denied');
         }
         $author = $this->userRepository->findOneBy(['vkId' => $answer->getAuthor()?->getVkId()]);

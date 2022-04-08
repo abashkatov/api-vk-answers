@@ -107,7 +107,7 @@ class QuestionController extends AbstractController
             [AbstractNormalizer::OBJECT_TO_POPULATE => $question]
         );
         $userVkId = (int)$request->headers->get('X-VK-ID');
-        if ($question->getAuthor() === null || $question->getAuthor()->getId() !== $userVkId) {
+        if ($question->getAuthor() === null || $question->getAuthor()->getVkId() !== $userVkId) {
             throw new UnauthorizedHttpException('Permissions denied');
         }
         $question->setVoteCount($votes);
@@ -138,7 +138,7 @@ class QuestionController extends AbstractController
             [AbstractNormalizer::OBJECT_TO_POPULATE => $question]
         );
         $userVkId = (int)$request->headers->get('X-VK-ID');
-        if ($question->getAuthor() === null || $question->getAuthor()->getId() !== $userVkId) {
+        if ($question->getAuthor() === null || $question->getAuthor()->getVkId() !== $userVkId) {
             throw new UnauthorizedHttpException('Permissions denied');
         }
         $question->setVoteCount($votes);
@@ -255,7 +255,7 @@ class QuestionController extends AbstractController
         /** @var Question $question */
         $question = $this->serializer->denormalize($data, Question::class);
         $userVkId = (int)$request->headers->get('X-VK-ID');
-        if ($question->getAuthor() === null || $question->getAuthor()->getId() !== $userVkId) {
+        if ($question->getAuthor() === null || $question->getAuthor()->getVkId() !== $userVkId) {
             throw new UnauthorizedHttpException('Permissions denied');
         }
         $author = $this->userRepository->findOneBy(['vkId' => $question->getAuthor()?->getVkId()]);
