@@ -23,6 +23,9 @@ class SignSubscriber implements EventSubscriberInterface
     {
         $userVkId = $event->getRequest()->headers->get('X-VK-ID');
         $xSign = $event->getRequest()->headers->get('X-Sign');
+        if (empty($xSign) || empty($userVkId)) {
+            throw new UnauthorizedHttpException('Wrong user');
+        }
         $query_params = [];
         parse_str(parse_url($xSign, PHP_URL_QUERY), $query_params);
         $sign_params = [];

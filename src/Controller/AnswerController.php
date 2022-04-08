@@ -50,14 +50,14 @@ class AnswerController extends AbstractController
      * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     #[Route('/questions/{question<\d+>}/answers', name: 'app_questions_answers_list', methods: ['GET'])]
-    public function list(Request $request): Response
+    public function list(Request $request, Question $question): Response
     {
         $page  = (int)$request->query->get('page', 1);
         $limit = (int)$request->query->get('limit', 20);
         if ($page < 1 || $limit < 1) {
             throw new \InvalidArgumentException();
         }
-        $answers = $this->answerRepository->findBy([], null, $limit, ($page - 1) * $limit);
+        $answers = $this->answerRepository->findBy(['question' => $question], null, $limit, ($page - 1) * $limit);
         $data    = $this->serializer->normalize($answers);
 
         return $this->json($data);
