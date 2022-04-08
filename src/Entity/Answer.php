@@ -30,13 +30,13 @@ class Answer
     private $createdAt;
 
     #[ORM\Column(type: 'datetime')]
-    private $updated_at;
+    private $updatedAt;
 
     #[ORM\Column(type: 'boolean', nullable: false, options: ['default' => false])]
     private bool $isBest = false;
 
     #[ORM\Column(type: 'integer', options: ['default' => 0])]
-    private int $vote_count = 0;
+    private int $voteCount = 0;
 
     public function getId(): ?int
     {
@@ -93,12 +93,12 @@ class Answer
 
     public function getUpdatedAt(): ?\DateTimeInterface
     {
-        return $this->updated_at;
+        return $this->updatedAt;
     }
 
-    public function setUpdatedAt(\DateTimeInterface $updated_at): self
+    public function setUpdatedAt(\DateTimeInterface $updatedAt): self
     {
-        $this->updated_at = $updated_at;
+        $this->updatedAt = $updatedAt;
 
         return $this;
     }
@@ -117,12 +117,12 @@ class Answer
 
     public function getVoteCount(): int
     {
-        return $this->vote_count;
+        return $this->voteCount;
     }
 
-    public function setVoteCount(int $vote_count): self
+    public function setVoteCount(int $voteCount): self
     {
-        $this->vote_count = $vote_count;
+        $this->voteCount = $voteCount;
 
         return $this;
     }
